@@ -16,7 +16,8 @@ the 20 most frequently used words in the file in order,
 along with their frequency.
 
 Start time: 12:10PM
-
+End time: 16:37
+Execution time:  862.798105ms - 878ms
 ***/
 
 type Frequency struct {
@@ -29,45 +30,35 @@ func main() {
 	//read file, argument $1 - filename
 	start := time.Now()
 
-	// show := 150
 	args := os.Args
-	var filename string
-	if len(args) == 4 {
-		filename = args[3]
-	} else {
-		filename = args[1]
+	if len(args) < 2 {
+		fmt.Println("Please provide a filename as an argument.")
+		return
 	}
+
+	filename := args[1]
 	fmt.Printf("Filename: %s\n\n", filename)
 
-	//store all words
-	unformattedSymbols := readFile(filename)
-	// fmt.Printf("unformattedSymbols: %s\n\n", unformattedSymbols[:show])
+	//store all words - 123.347µs
+	unformattedSymbols, err := os.ReadFile(filename)
+	check(err)
 
-	//remove symbols and make words
+	//remove symbols, lower letters and make []byte words - 4.431796ms
 	formattedWords := formatLetter(unformattedSymbols)
-	// fmt.Printf("formattedWords: %s - %d\n\n", formattedWords[:show], len(formattedWords))
 
-	//unique words
-	// libraryWords := uniqueWords(formattedWords)
-
-	//count
+	//count frequency - 813.962397ms - huge process
 	unsortedLibraryWord := libraryWord(formattedWords)
-	// fmt.Printf("unformattedSymbols: %s - %d\n\n", countedWords[0], len(countedWords))
-	// //print
 
+	//sort frequency by number
 	sortedFrequency := sort(unsortedLibraryWord)
 
 	fmt.Printf("Counted: %d\n", len(sortedFrequency))
-	for idx, f := range sortedFrequency {
-		if idx == 20 {
-			break
-		}
-		fmt.Printf("%d\t %s\t \n", f.f, f.word)
+	for i := 0; i < 20; i++ {
+		fmt.Printf("%d\t %s\t \n", sortedFrequency[i].f, sortedFrequency[i].word)
 	}
 
 	// Code to measure
-	duration := time.Since(start)
-	fmt.Println("Execution time: ", duration)
+	fmt.Println("Execution time: ", time.Since(start))
 }
 
 func sort(arr []Frequency) []Frequency {
@@ -81,33 +72,41 @@ func sort(arr []Frequency) []Frequency {
 	return arr
 }
 
-// func printFrequency(countedWords []Frequency) {
-
-// }
-
+// method for count the words
 func libraryWord(formattedWords [][]byte) []Frequency {
 	length := len(formattedWords)
 
+	//struct for saving the word and count, it can be replaced as two variable []byte and []int
 	var result []Frequency
 	freq := 0
 	checked := make([]int, length)
 
-	for i := 0; i < len(formattedWords); i++ {
+	//loop over words
+	for i := 0; i < length; i++ {
+
+		//if already checked than ignore the word
 		if checked[i] == 1 {
 			continue
 		}
 
-		for j := i; j < len(formattedWords); j++ {
+		for j := i; j < length; j++ {
+			//if already checked than ignore the word
 			if checked[j] == 1 {
 				continue
 			}
+
+			//compare two []byte words,
 			if testEq(formattedWords[i], formattedWords[j]) == true {
+				//if equal then mark word as checked and add +1 top freq
 				checked[j] = 1
 				freq = freq + 1
 				continue
 			}
 		}
+		// add unique word with frequency
 		result = append(result, Frequency{word: formattedWords[i], f: freq})
+
+		//init var to 0 for next word
 		freq = 0
 	}
 
@@ -117,14 +116,19 @@ func libraryWord(formattedWords [][]byte) []Frequency {
 }
 
 func testEq(a, b []byte) bool {
+	//check if two var has diff size
 	if len(a) != len(b) {
 		return false
 	}
+
+	//check all stuff
 	for i := range a {
 		if a[i] != b[i] {
 			return false
 		}
 	}
+
+	//if two var is equal
 	return true
 }
 
@@ -134,29 +138,30 @@ func check(e error) {
 	}
 }
 
-func readFile(filename string) []byte {
-	words, err := os.ReadFile(filename)
-	check(err)
-	return words
-}
-
 func formatLetter(unformattedLetter []byte) [][]byte {
+	//all words
 	var words [][]byte
+
+	//temp word or collection of letter
 	var formattedLetter []byte
+
+	//loop over all symbols to find letters
 	for _, byteLetter := range unformattedLetter {
-		// if (byteLetter == 10 || byteLetter == 32) && len(formattedLetter) != 0 {
-		// 	words = append(words, formattedLetter)
-		// 	formattedLetter = nil
-		// }
+		//UTF-8 Decimal format
+		//if Upper letter make Lower
 		if byteLetter >= 65 && byteLetter <= 90 {
 			byteLetter = byteLetter + 32
 		}
+		//if lower letter save into formatterLetter
 		if byteLetter >= 97 && byteLetter <= 122 {
 			formattedLetter = append(formattedLetter, byteLetter)
 		} else if len(formattedLetter) != 0 {
+			//if it is not a letter, than save it as word, and make empty temp var
 			words = append(words, formattedLetter)
 			formattedLetter = nil
 		}
 	}
+
+	//return collection of words
 	return words
 }
